@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreOrUpdateProductRequest;
 use App\Models\Product;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesResources;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 
 class ProductController extends Controller
 {
-    public function __construct(protected ProductService $service)
+
+    use AuthorizesRequests;
+
+    public function __construct(protected ProductService $productService)
+
     {
-//        $this->authorizeResource(Product::class, 'product');
+        $this->authorizeResource(Product::class, 'product');
     }
 
     public function index()
     {
-        $products = $this->service->getAll();
+        $products = $this->productService->allCached();
         return view('products.index', compact('products'));
     }
 
@@ -25,15 +31,10 @@ class ProductController extends Controller
         return view('products.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreOrUpdateProductRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-        ]);
-
-        $this->service->store($data);
+        $data = $request->validated();
+        $this->productService->store($data);
         return redirect()->route('products.index');
     }
 
@@ -42,21 +43,16 @@ class ProductController extends Controller
         return view('products.edit', compact('product'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(StoreOrUpdateProductRequest $request, Product $product)
     {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-        ]);
-
-        $this->service->update($product, $data);
+        $data = $request->validated();
+        $this->productService->update($product, $data);
         return redirect()->route('products.index');
     }
 
     public function destroy(Product $product)
     {
-        $this->service->destroy($product);
+        $this->productService->destroy($product);
         return redirect()->route('products.index');
     }
 }

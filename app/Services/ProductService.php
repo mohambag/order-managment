@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Repositories\ProductRepository;
+use Illuminate\Support\Facades\Cache;
 
 class ProductService
 {
@@ -16,6 +17,7 @@ class ProductService
 
     public function getAll()
     {
+        dd($this->repo->all());
         return $this->repo->all();
     }
 
@@ -37,5 +39,13 @@ class ProductService
     public function destroy(Product $product)
     {
         return $this->repo->delete($product);
+    }
+
+    public function allCached()
+    {
+        return Cache::remember('products_list', 3600, function () {
+            $products = Product::all();
+            return $products;
+        });
     }
 }
