@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 class ProductService
 {
     protected $repo;
+    protected string $cacheKey = 'products_list';
 
     public function __construct(ProductRepository $repo)
     {
@@ -17,7 +18,6 @@ class ProductService
 
     public function getAll()
     {
-        dd($this->repo->all());
         return $this->repo->all();
     }
 
@@ -28,24 +28,34 @@ class ProductService
 
     public function store(array $data)
     {
-        return $this->repo->create($data);
+        $product = $this->repo->create($data);
+        $this->forgetCache();
+        return $product;
     }
 
     public function update(Product $product, array $data)
     {
-        return $this->repo->update($product, $data);
+        $this->repo->update($product, $data);
+        $this->forgetCache();
+        return $product;
     }
 
     public function destroy(Product $product)
     {
-        return $this->repo->delete($product);
+        $this->repo->delete($product);
+        $this->forgetCache();
+        return true;
     }
 
     public function allCached()
     {
-        return Cache::remember('products_list', 3600, function () {
-            $products = Product::all();
-            return $products;
+        return Cache::remember($this->cacheKey, now()->addMinutes(60), function () {
+            return $this->repo->all();
         });
+    }
+
+    protected function forgetCache()
+    {
+        Cache::forget($this->cacheKey);
     }
 }
